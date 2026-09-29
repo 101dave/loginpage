@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Portal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        
+        <!-- ================= 1. LOGIN FORM ================= -->
+        <div id="login-container" class="space-y-4">
+            <div class="text-center">
+                <h1 class="text-2xl font-bold text-slate-800">School Portal</h1>
+                <p class="text-xs text-slate-500 mt-1">Sign in to your account</p>
+            </div>
+
+            <div id="login-alert" class="hidden p-3 rounded-lg text-xs font-medium text-center"></div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                    <input type="email" id="login-email" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition cursor-pointer">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="text-center pt-2">
+                <p class="text-xs text-slate-600">Wala pang account? 
+                    <button type="button" onclick="switchToRegister()" class="text-indigo-600 font-bold hover:underline cursor-pointer">Create Account</button>
+                </p>
+            </div>
+        </div>
+
+        <!-- ================= 2. REGISTER FORM ================= -->
+        <div id="register-container" class="hidden space-y-4">
+            <div class="text-center">
+                <h1 class="text-2xl font-bold text-slate-800">Create Account</h1>
+                <p class="text-xs text-slate-500 mt-1">Register a new portal account</p>
+            </div>
+
+            <div id="register-alert" class="hidden p-3 rounded-lg text-xs font-medium text-center"></div>
+
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Role</label>
+                    <select id="register-role" class="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer">
+                        <option value="student">Student Portal</option>
+                        <option value="teacher">Teacher Portal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email</label>
+                    <input type="email" id="register-email" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="register-password" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition cursor-pointer">
+                    Register Account
+                </button>
+            </form>
+
+            <div class="text-center pt-2">
+                <p class="text-xs text-slate-600">May account na? 
+                    <button type="button" onclick="switchToLogin()" class="text-indigo-600 font-bold hover:underline cursor-pointer">Sign In</button>
+                </p>
+            </div>
+        </div>
+
+        <!-- ================= 3. TEACHER DASHBOARD ================= -->
+        <div id="teacher-dashboard" class="hidden space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h2 class="font-bold text-slate-800">Teacher Portal</h2>
+                    <p class="text-xs text-slate-500" id="teacher-email"></p>
+                </div>
+                <button type="button" onclick="logout()" class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg hover:bg-rose-200 cursor-pointer">Logout</button>
+            </div>
+            <div class="bg-indigo-50 p-4 rounded-xl space-y-3">
+                <h3 class="text-xs font-bold text-indigo-900 uppercase">Post Assignment</h3>
+                <input type="text" id="assignment-title" placeholder="Assignment Title" class="w-full px-3 py-2 bg-white border rounded-lg text-xs">
+                <button type="button" onclick="postAssignment()" class="w-full py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 cursor-pointer">Publish</button>
+            </div>
+        </div>
+
+        <!-- ================= 4. STUDENT DASHBOARD ================= -->
+        <div id="student-dashboard" class="hidden space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h2 class="font-bold text-slate-800">Student Portal</h2>
+                    <p class="text-xs text-slate-500" id="student-email"></p>
+                </div>
+                <button type="button" onclick="logout()" class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg hover:bg-rose-200 cursor-pointer">Logout</button>
+            </div>
+            <div class="bg-emerald-50 p-4 rounded-xl">
+                <h3 class="text-xs font-bold text-emerald-900 uppercase">Active Tasks</h3>
+                <p class="text-xs text-emerald-700 mt-1">Walang pang assignments na pinapaskel.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Supabase Setup
+        const SUPABASE_URL = 'https://qllcvglmwnidgwhrbjwj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsbGN2Z2xtd25pZGd3aHJiandqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NzM1NTAsImV4cCI6MjEwNjI0OTU1MH0.1VKb3TIDG_xXtF3RxOLMikz5QKnQ123OHOYZsr78QaY';
+        
+        let supabase = null;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            console.error("Supabase init error:", e);
+        }
+
+        // Direct UI Switcher Functions (Hindi maaapektuhan ng database errors)
+        function switchToRegister() {
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('register-container').classList.remove('hidden');
+            clearAlerts();
+        }
+
+        function switchToLogin() {
+            document.getElementById('register-container').classList.add('hidden');
+            document.getElementById('login-container').classList.remove('hidden');
+            clearAlerts();
+        }
+
+        // Register Handler
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!supabase) return alert('Supabase error!');
+
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const role = document.getElementById('register-role').value;
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { role: role } }
+            });
+
+            if (error) {
+                showAlert('register-alert', error.message, true);
+            } else {
+                showAlert('register-alert', 'Registered na! Pwede ka nang mag-sign in.', false);
+                setTimeout(switchToLogin, 1500);
+            }
+        });
+
+        // Login Handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!supabase) return alert('Supabase error!');
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                showAlert('login-alert', error.message, true);
+            } else {
+                checkSession();
+            }
+        });
+
+        // Check Session
+        async function checkSession() {
+            if (!supabase) return;
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('register-container').classList.add('hidden');
+            document.getElementById('teacher-dashboard').classList.add('hidden');
+            document.getElementById('student-dashboard').classList.add('hidden');
+
+            if (session) {
+                const user = session.user;
+                const role = user.user_metadata?.role || 'student';
+
+                if (role === 'teacher') {
+                    document.getElementById('teacher-dashboard').classList.remove('hidden');
+                    document.getElementById('teacher-email').textContent = user.email;
+                } else {
+                    document.getElementById('student-dashboard').classList.remove('hidden');
+                    document.getElementById('student-email').textContent = user.email;
+                }
+            } else {
+                document.getElementById('login-container').classList.remove('hidden');
+            }
+        }
+
+        async function logout() {
+            if (supabase) await supabase.auth.signOut();
+            checkSession();
+        }
+
+        function showAlert(elementId, msg, isErr) {
+            const el = document.getElementById(elementId);
+            el.textContent = msg;
+            el.className = `p-3 rounded-lg text-xs font-medium text-center ${isErr ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`;
+            el.classList.remove('hidden');
+        }
+
+        function clearAlerts() {
+            document.getElementById('login-alert').classList.add('hidden');
+            document.getElementById('register-alert').classList.add('hidden');
+        }
+
+        function postAssignment() {
+            const title = document.getElementById('assignment-title').value;
+            if (!title) return alert('Lagyan ng pamagat!');
+            alert(`Nai-post na ang: ${title}`);
+            document.getElementById('assignment-title').value = '';
+        }
+
+        // Run on load
+        checkSession();
+    </script>
+</body>
+</html>
