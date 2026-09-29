@@ -12,7 +12,7 @@
 <body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
 
     <!-- Main Container -->
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 space-y-6">
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-6">
         
         <!-- ================= 1. LOGIN FORM ================= -->
         <div id="login-container" class="space-y-4">
@@ -90,25 +90,46 @@
                 </div>
                 <button type="button" onclick="logout()" class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg hover:bg-rose-200 cursor-pointer">Logout</button>
             </div>
+            
             <div class="bg-indigo-50 p-4 rounded-xl space-y-3">
                 <h3 class="text-xs font-bold text-indigo-900 uppercase">Post Assignment</h3>
                 <input type="text" id="assignment-title" placeholder="Assignment Title" class="w-full px-3 py-2 bg-white border rounded-lg text-xs">
-                <button type="button" onclick="postAssignment()" class="w-full py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 cursor-pointer">Publish</button>
+                <button type="button" onclick="postAssignment()" class="w-full py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 cursor-pointer">Publish Assignment</button>
             </div>
         </div>
 
         <!-- ================= 4. STUDENT DASHBOARD ================= -->
-        <div id="student-dashboard" class="hidden space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
+        <div id="student-dashboard" class="hidden space-y-4 max-h-[80vh] overflow-y-auto pr-1">
+            <div class="flex justify-between items-center border-b pb-3 sticky top-0 bg-white py-1">
                 <div>
                     <h2 class="font-bold text-slate-800">Student Portal</h2>
                     <p class="text-xs text-slate-500" id="student-email"></p>
                 </div>
                 <button type="button" onclick="logout()" class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg hover:bg-rose-200 cursor-pointer">Logout</button>
             </div>
-            <div class="bg-emerald-50 p-4 rounded-xl">
-                <h3 class="text-xs font-bold text-emerald-900 uppercase">Active Tasks</h3>
-                <p class="text-xs text-emerald-700 mt-1">Walang pang assignments na pinapaskel.</p>
+
+            <!-- Active Assignments Section -->
+            <div class="bg-indigo-50 p-4 rounded-xl space-y-2">
+                <h3 class="text-xs font-bold text-indigo-900 uppercase">Active Assignments</h3>
+                <div id="student-assignments-list" class="space-y-1 text-xs text-slate-700">
+                    <p class="text-indigo-700 italic">Naglo-load ng assignments...</p>
+                </div>
+            </div>
+
+            <!-- Grades Section -->
+            <div class="bg-emerald-50 p-4 rounded-xl space-y-2">
+                <h3 class="text-xs font-bold text-emerald-900 uppercase">My Grades</h3>
+                <div id="student-grades-list" class="space-y-1 text-xs text-slate-700">
+                    <p class="text-emerald-700 italic">Naglo-load ng grades...</p>
+                </div>
+            </div>
+
+            <!-- Attendance Section -->
+            <div class="bg-amber-50 p-4 rounded-xl space-y-2">
+                <h3 class="text-xs font-bold text-amber-900 uppercase">My Attendance</h3>
+                <div id="student-attendance-list" class="space-y-1 text-xs text-slate-700">
+                    <p class="text-amber-700 italic">Naglo-load ng attendance...</p>
+                </div>
             </div>
         </div>
 
@@ -127,7 +148,6 @@
             console.error("Supabase init error:", e);
         }
 
-        // Direct UI Switcher Functions (Hindi maaapektuhan ng database errors)
         function switchToRegister() {
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('register-container').classList.remove('hidden');
@@ -149,7 +169,7 @@
             const password = document.getElementById('register-password').value;
             const role = document.getElementById('register-role').value;
 
-            const { data, error } = await supabase.auth.signUp({
+            const { error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: { data: { role: role } }
@@ -171,44 +191,98 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
                 showAlert('login-alert', error.message, true);
-            } else {
-                checkSession();
             }
         });
 
-        // Check Session
-        async function checkSession() {
-            if (!supabase) return;
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            document.getElementById('login-container').classList.add('hidden');
-            document.getElementById('register-container').classList.add('hidden');
-            document.getElementById('teacher-dashboard').classList.add('hidden');
-            document.getElementById('student-dashboard').classList.add('hidden');
+        // Real-time Auth State Handler
+        if (supabase) {
+            supabase.auth.onAuthStateChange((event, session) => {
+                document.getElementById('login-container').classList.add('hidden');
+                document.getElementById('register-container').classList.add('hidden');
+                document.getElementById('teacher-dashboard').classList.add('hidden');
+                document.getElementById('student-dashboard').classList.add('hidden');
 
-            if (session) {
-                const user = session.user;
-                const role = user.user_metadata?.role || 'student';
+                if (session) {
+                    const user = session.user;
+                    const role = user.user_metadata?.role || 'student';
 
-                if (role === 'teacher') {
-                    document.getElementById('teacher-dashboard').classList.remove('hidden');
-                    document.getElementById('teacher-email').textContent = user.email;
+                    if (role === 'teacher') {
+                        document.getElementById('teacher-dashboard').classList.remove('hidden');
+                        document.getElementById('teacher-email').textContent = user.email;
+                    } else {
+                        document.getElementById('student-dashboard').classList.remove('hidden');
+                        document.getElementById('student-email').textContent = user.email;
+                        loadStudentPortalData(user.email);
+                    }
                 } else {
-                    document.getElementById('student-dashboard').classList.remove('hidden');
-                    document.getElementById('student-email').textContent = user.email;
+                    document.getElementById('login-container').classList.remove('hidden');
                 }
-            } else {
-                document.getElementById('login-container').classList.remove('hidden');
-            }
+            });
         }
 
         async function logout() {
             if (supabase) await supabase.auth.signOut();
-            checkSession();
+        }
+
+        // Fetch Student Data (Assignments, Grades, Attendance)
+        async function loadStudentPortalData(email) {
+            // 1. Fetch Assignments
+            const { data: assignments, error: errAssign } = await supabase
+                .from('assignments')
+                .select('*')
+                .order('id', { ascending: false });
+
+            const assignListEl = document.getElementById('student-assignments-list');
+            if (errAssign || !assignments || assignments.length === 0) {
+                assignListEl.innerHTML = `<p class="text-indigo-700">Walang pang assignments na pinapaskil.</p>`;
+            } else {
+                assignListEl.innerHTML = assignments.map(a => `<div class="bg-white p-2 rounded border">📌 ${a.title}</div>`).join('');
+            }
+
+            // 2. Fetch Grades
+            const { data: grades, error: errGrades } = await supabase
+                .from('grades')
+                .select('*')
+                .eq('student_email', email);
+
+            const gradesListEl = document.getElementById('student-grades-list');
+            if (errGrades || !grades || grades.length === 0) {
+                gradesListEl.innerHTML = `<p class="text-emerald-700">Wala pang nakatalang grades.</p>`;
+            } else {
+                gradesListEl.innerHTML = grades.map(g => `<div class="bg-white p-2 rounded border flex justify-between"><span>📚 <strong>${g.subject}</strong></span> <span class="font-bold text-emerald-600">${g.grade} (${g.remarks || 'N/A'})</span></div>`).join('');
+            }
+
+            // 3. Fetch Attendance
+            const { data: attendance, error: errAtt } = await supabase
+                .from('attendance')
+                .select('*')
+                .eq('student_email', email)
+                .order('date', { ascending: false });
+
+            const attListEl = document.getElementById('student-attendance-list');
+            if (errAtt || !attendance || attendance.length === 0) {
+                attListEl.innerHTML = `<p class="text-amber-700">Wala pang attendance records.</p>`;
+            } else {
+                attListEl.innerHTML = attendance.map(att => `<div class="bg-white p-2 rounded border flex justify-between"><span>📅 ${att.date}</span> <span class="font-semibold ${att.status === 'Present' ? 'text-emerald-600' : 'text-rose-600'}">${att.status}</span></div>`).join('');
+            }
+        }
+
+        // Post Assignment Function for Teachers
+        async function postAssignment() {
+            const title = document.getElementById('assignment-title').value;
+            if (!title) return alert('Lagyan ng pamagat!');
+
+            const { error } = await supabase.from('assignments').insert([{ title }]);
+            if (error) {
+                alert('Error sa pag-post: ' + error.message);
+            } else {
+                alert(`Nai-post na ang assignment: ${title}`);
+                document.getElementById('assignment-title').value = '';
+            }
         }
 
         function showAlert(elementId, msg, isErr) {
@@ -222,16 +296,6 @@
             document.getElementById('login-alert').classList.add('hidden');
             document.getElementById('register-alert').classList.add('hidden');
         }
-
-        function postAssignment() {
-            const title = document.getElementById('assignment-title').value;
-            if (!title) return alert('Lagyan ng pamagat!');
-            alert(`Nai-post na ang: ${title}`);
-            document.getElementById('assignment-title').value = '';
-        }
-
-        // Run on load
-        checkSession();
     </script>
 </body>
 </html>
