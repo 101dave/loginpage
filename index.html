@@ -1,300 +1,1667 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Portal</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Attendance & Grade Management System - JS IndexedDB Engine</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        zinc: {
+                            50: '#fafafa',
+                            100: '#f4f4f5',
+                            200: '#e4e4e7',
+                            300: '#d4d4d8',
+                            400: '#a1a1aa',
+                            500: '#71717a',
+                            600: '#52525b',
+                            700: '#3f3f46',
+                            800: '#27272a',
+                            900: '#18181b',
+                            950: '#09090b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Dexie.js for IndexedDB JavaScript Database Engine -->
+    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 min-h-full flex flex-col transition-colors duration-200">
 
-    <!-- Main Container -->
-    <div class="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6 space-y-6">
-        
-        <!-- ================= 1. LOGIN FORM ================= -->
-        <div id="login-container" class="space-y-4">
-            <div class="text-center">
-                <h1 class="text-2xl font-bold text-slate-800">School Portal</h1>
-                <p class="text-xs text-slate-500 mt-1">Sign in to your account</p>
-            </div>
-
-            <div id="login-alert" class="hidden p-3 rounded-lg text-xs font-medium text-center"></div>
-
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email</label>
-                    <input type="email" id="login-email" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 sticky top-0 z-30 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand logo & status -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center font-bold text-lg shadow-sm">
+                        <i class="fa-solid fa-graduation-cap text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold tracking-tight text-lg text-zinc-900 dark:text-zinc-100">AcademiaX</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-mono border border-zinc-200 dark:border-zinc-700">v3.0 DB</span>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition cursor-pointer">
-                    Sign In
-                </button>
-            </form>
 
-            <div class="text-center pt-2">
-                <p class="text-xs text-slate-600">Wala pang account? 
-                    <button type="button" onclick="switchToRegister()" class="text-indigo-600 font-bold hover:underline cursor-pointer">Create Account</button>
-                </p>
-            </div>
-        </div>
+                <!-- Database status badge & actions -->
+                <div class="hidden md:flex items-center space-x-3">
+                    <div id="db-status-badge" class="flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="db-status-text">JS IndexedDB Active</span>
+                    </div>
 
-        <!-- ================= 2. REGISTER FORM ================= -->
-        <div id="register-container" class="hidden space-y-4">
-            <div class="text-center">
-                <h1 class="text-2xl font-bold text-slate-800">Create Account</h1>
-                <p class="text-xs text-slate-500 mt-1">Register a new portal account</p>
-            </div>
+                    <button onclick="toggleDarkMode()" class="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
+                        <i class="fa-solid fa-moon dark:hidden"></i>
+                        <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                    </button>
 
-            <div id="register-alert" class="hidden p-3 rounded-lg text-xs font-medium text-center"></div>
-
-            <form id="register-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Role</label>
-                    <select id="register-role" class="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none cursor-pointer">
-                        <option value="student">Student Portal</option>
-                        <option value="teacher">Teacher Portal</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email</label>
-                    <input type="email" id="register-email" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="register-password" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-                <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg text-sm transition cursor-pointer">
-                    Register Account
-                </button>
-            </form>
-
-            <div class="text-center pt-2">
-                <p class="text-xs text-slate-600">May account na? 
-                    <button type="button" onclick="switchToLogin()" class="text-indigo-600 font-bold hover:underline cursor-pointer">Sign In</button>
-                </p>
-            </div>
-        </div>
-
-        <!-- ================= 3. TEACHER DASHBOARD ================= -->
-        <div id="teacher-dashboard" class="hidden space-y-4">
-            <div class="flex justify-between items-center border-b pb-3">
-                <div>
-                    <h2 class="font-bold text-slate-800">Teacher Portal</h2>
-                    <p class="text-xs text-slate-500" id="teacher-email"></p>
-                </div>
-                <button type="button" onclick="logout()" class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg hover:bg-rose-200 cursor-pointer">Logout</button>
-            </div>
-            
-            <div class="bg-indigo-50 p-4 rounded-xl space-y-3">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase">Post Assignment</h3>
-                <input type="text" id="assignment-title" placeholder="Assignment Title" class="w-full px-3 py-2 bg-white border rounded-lg text-xs">
-                <button type="button" onclick="postAssignment()" class="w-full py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 cursor-pointer">Publish Assignment</button>
-            </div>
-        </div>
-
-        <!-- ================= 4. STUDENT DASHBOARD ================= -->
-        <div id="student-dashboard" class="hidden space-y-4 max-h-[80vh] overflow-y-auto pr-1">
-            <div class="flex justify-between items-center border-b pb-3 sticky top-0 bg-white py-1">
-                <div>
-                    <h2 class="font-bold text-slate-800">Student Portal</h2>
-                    <p class="text-xs text-slate-500" id="student-email"></p>
-                </div>
-                <button type="button" onclick="logout()" class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg hover:bg-rose-200 cursor-pointer">Logout</button>
-            </div>
-
-            <!-- Active Assignments Section -->
-            <div class="bg-indigo-50 p-4 rounded-xl space-y-2">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase">Active Assignments</h3>
-                <div id="student-assignments-list" class="space-y-1 text-xs text-slate-700">
-                    <p class="text-indigo-700 italic">Naglo-load ng assignments...</p>
-                </div>
-            </div>
-
-            <!-- Grades Section -->
-            <div class="bg-emerald-50 p-4 rounded-xl space-y-2">
-                <h3 class="text-xs font-bold text-emerald-900 uppercase">My Grades</h3>
-                <div id="student-grades-list" class="space-y-1 text-xs text-slate-700">
-                    <p class="text-emerald-700 italic">Naglo-load ng grades...</p>
-                </div>
-            </div>
-
-            <!-- Attendance Section -->
-            <div class="bg-amber-50 p-4 rounded-xl space-y-2">
-                <h3 class="text-xs font-bold text-amber-900 uppercase">My Attendance</h3>
-                <div id="student-attendance-list" class="space-y-1 text-xs text-slate-700">
-                    <p class="text-amber-700 italic">Naglo-load ng attendance...</p>
+                    <!-- User Profile Dropdown / Login trigger -->
+                    <div id="user-navbar-container" class="relative pl-2 border-l border-zinc-200 dark:border-zinc-800">
+                        <!-- Rendered by JS -->
+                    </div>
                 </div>
             </div>
         </div>
+    </nav>
 
+    <!-- Navigation Tabs Bar -->
+    <div id="app-nav-tabs" class="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 px-4 sm:px-6 lg:px-8 hidden">
+        <div class="max-w-7xl mx-auto flex space-x-8 overflow-x-auto" id="nav-tabs-container">
+            <!-- Dynamically populated based on Teacher vs Student role -->
+        </div>
     </div>
 
-    <!-- JavaScript -->
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- VIEW: Authentication / Login Screen -->
+        <section id="view-login" class="max-w-md mx-auto my-12 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 sm:p-8 shadow-xl">
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                    <i class="fa-solid fa-id-card-clip text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Portal Access</h1>
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Select portal mode to begin session</p>
+            </div>
+
+            <!-- Role Toggle Tabs -->
+            <div class="grid grid-cols-2 gap-1 p-1 bg-zinc-100 dark:bg-zinc-800 rounded-lg mb-6">
+                <button type="button" onclick="setLoginMode('teacher')" id="login-tab-teacher" class="py-2 text-xs font-semibold rounded-md transition bg-white dark:bg-zinc-900 shadow-xs text-zinc-900 dark:text-zinc-100">Teacher Portal</button>
+                <button type="button" onclick="setLoginMode('student')" id="login-tab-student" class="py-2 text-xs font-semibold rounded-md transition text-zinc-500 dark:text-zinc-400">Student Portal</button>
+            </div>
+
+            <!-- Teacher Login Form -->
+            <div id="login-form-teacher" class="space-y-4">
+                <form onsubmit="handleTeacherLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Teacher Email</label>
+                        <input type="email" id="login-email" required placeholder="sarah.jenkins@university.edu" class="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 text-zinc-900 dark:text-zinc-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Password</label>
+                        <input type="password" id="login-password" required value="password123" class="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 text-zinc-900 dark:text-zinc-100">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold text-sm rounded-lg transition shadow-sm">
+                        Sign In as Teacher
+                    </button>
+                </form>
+
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-zinc-200 dark:border-zinc-800"></div></div>
+                    <div class="relative flex justify-center text-xs uppercase"><span class="bg-white dark:bg-zinc-900 px-2 text-zinc-400">Quick Demo Teachers</span></div>
+                </div>
+                <div id="demo-teachers-list" class="space-y-2"></div>
+            </div>
+
+            <!-- Student Login / Selector Form -->
+            <div id="login-form-student" class="space-y-4 hidden">
+                <form onsubmit="handleStudentLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">Select Student Account</label>
+                        <select id="student-login-select" class="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 text-zinc-900 dark:text-zinc-100">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <p class="text-[11px] text-zinc-500 mt-1">Select any enrolled student to view personal grades and attendance.</p>
+                    </div>
+                    <button type="submit" class="w-full py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold text-sm rounded-lg transition shadow-sm">
+                        Access Student Portal
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- VIEW: Mark Attendance (Teacher) -->
+        <section id="view-mark-attendance" class="hidden space-y-6">
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Attendance Date</label>
+                        <input type="date" id="att-date" onchange="loadAttendanceSheet()" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Subject</label>
+                        <select id="att-subject-select" onchange="loadAttendanceSheet()" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">Section</label>
+                        <select id="att-section-select" onchange="loadAttendanceSheet()" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100"></select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="markAllStatus('present')" class="flex-1 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 transition"><i class="fa-solid fa-check text-emerald-600 mr-1"></i> All Present</button>
+                        <button type="button" onclick="markAllStatus('absent')" class="flex-1 px-3 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 transition"><i class="fa-solid fa-xmark text-rose-600 mr-1"></i> All Absent</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Counters -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><p class="text-xs text-zinc-500 font-medium">Total Roster</p><p id="cnt-total" class="text-2xl font-bold mt-1">0</p></div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><p class="text-xs text-zinc-500 font-medium">Present</p></div><p id="cnt-present" class="text-2xl font-bold text-emerald-600 mt-1">0</p></div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500"></span><p class="text-xs text-zinc-500 font-medium">Absent</p></div><p id="cnt-absent" class="text-2xl font-bold text-rose-600 mt-1">0</p></div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span><p class="text-xs text-zinc-500 font-medium">Late</p></div><p id="cnt-late" class="text-2xl font-bold text-amber-600 mt-1">0</p></div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-500"></span><p class="text-xs text-zinc-500 font-medium">Excused</p></div><p id="cnt-excused" class="text-2xl font-bold text-sky-600 mt-1">0</p></div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4"><p class="text-xs text-zinc-500 font-medium">Presence %</p><p id="cnt-rate" class="text-2xl font-bold mt-1">0%</p></div>
+            </div>
+
+            <!-- Table -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                    <h2 class="font-semibold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2"><i class="fa-solid fa-list-check text-zinc-400"></i> Student Attendance Roster</h2>
+                    <button onclick="saveCurrentAttendance()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold rounded-lg shadow transition flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Save Attendance Sheet</span></button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Student ID</th>
+                                <th class="px-6 py-3 font-semibold">Student Name</th>
+                                <th class="px-6 py-3 font-semibold">Department</th>
+                                <th class="px-6 py-3 font-semibold text-center">Status Selection</th>
+                                <th class="px-6 py-3 font-semibold">Notes / Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: Gradebook & Score Encoding (Teacher) -->
+        <section id="view-gradebook" class="hidden space-y-6">
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Subject</label>
+                        <select id="grade-subject-select" onchange="loadGradebook()" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">Section</label>
+                        <select id="grade-section-select" onchange="loadGradebook()" class="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100"></select>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="openAddAssessmentModal()" class="w-full md:w-auto px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-plus text-xs"></i><span>Create Assessment / Quiz</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assessments List & Score Matrix -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Assessment Selector Card -->
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm space-y-3">
+                    <h2 class="font-semibold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2"><i class="fa-solid fa-book-bookmark text-zinc-400"></i> Assessments List</h2>
+                    <div id="assessments-list-container" class="space-y-2 max-h-[450px] overflow-y-auto pr-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Score Encoding Table Card -->
+                <div class="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                    <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+                        <div>
+                            <h2 id="active-assessment-title" class="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Select an Assessment</h2>
+                            <p id="active-assessment-meta" class="text-xs text-zinc-500">Max Score: — • Date: —</p>
+                        </div>
+                        <button onclick="saveCurrentScores()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold rounded-lg shadow transition flex items-center gap-2"><i class="fa-solid fa-floppy-disk"></i><span>Save Scores</span></button>
+                    </div>
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                                <tr>
+                                    <th class="px-6 py-3 font-semibold">Student ID</th>
+                                    <th class="px-6 py-3 font-semibold">Student Name</th>
+                                    <th class="px-6 py-3 font-semibold text-center">Score Obtained</th>
+                                    <th class="px-6 py-3 font-semibold text-right">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scores-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                                <tr><td colspan="4" class="px-6 py-8 text-center text-xs text-zinc-400">Please select an assessment from the left panel.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: Student Roster Management (Teacher) -->
+        <section id="view-student-roster" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex flex-1 gap-3">
+                    <div class="relative flex-1 max-w-xs">
+                        <i class="fa-solid fa-search absolute left-3 top-3 text-zinc-400 text-xs"></i>
+                        <input type="text" id="roster-search" oninput="renderRosterTable()" placeholder="Search by name or ID..." class="w-full pl-9 pr-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100">
+                    </div>
+                    <select id="roster-section-filter" onchange="renderRosterTable()" class="px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 text-zinc-900 dark:text-zinc-100">
+                        <option value="ALL">All Sections</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="openAddSectionModal()" class="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-lg border border-zinc-300 dark:border-zinc-700 transition flex items-center gap-2"><i class="fa-solid fa-folder-plus text-xs"></i><span>Add Section</span></button>
+                    <button onclick="openAddStudentModal()" class="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold rounded-lg transition flex items-center gap-2"><i class="fa-solid fa-plus text-xs"></i><span>Add Student</span></button>
+                </div>
+            </div>
+
+            <!-- Floating Bulk Selection Action Bar -->
+            <div id="bulk-action-bar" class="hidden bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-3 rounded-xl shadow-lg flex items-center justify-between transition-all">
+                <div class="flex items-center space-x-3 text-xs font-medium"><span id="bulk-count-badge" class="px-2 py-0.5 rounded-full bg-zinc-700 dark:bg-zinc-300 text-white dark:text-zinc-900 font-bold">0</span><span>students selected</span></div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openBulkMoveModal()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 dark:bg-zinc-200 dark:hover:bg-zinc-300 text-xs rounded-lg transition"><i class="fa-solid fa-right-left mr-1"></i> Move Section</button>
+                    <button onclick="confirmBulkDelete()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs rounded-lg transition"><i class="fa-solid fa-trash mr-1"></i> Delete Selected</button>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                            <tr>
+                                <th class="p-4 w-10"><input type="checkbox" id="select-all-students" onchange="toggleSelectAllRoster(this)" class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-800"></th>
+                                <th class="px-6 py-3 font-semibold">Student ID</th>
+                                <th class="px-6 py-3 font-semibold">Full Name</th>
+                                <th class="px-6 py-3 font-semibold">Department</th>
+                                <th class="px-6 py-3 font-semibold">Section (Inline Edit)</th>
+                                <th class="px-6 py-3 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roster-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: Analytics & History (Teacher) -->
+        <section id="view-reports-analytics" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs text-zinc-500 font-medium">Total Database Records</p><h3 id="ana-total-records" class="text-3xl font-bold mt-2">0</h3></div>
+                        <div class="p-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-zinc-600 dark:text-zinc-300"><i class="fa-solid fa-database text-lg"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs text-zinc-500 font-medium">Average Attendance Rate</p><h3 id="ana-avg-rate" class="text-3xl font-bold text-emerald-600 mt-2">0%</h3></div>
+                        <div class="p-2.5 bg-emerald-50 dark:bg-emerald-950 rounded-lg text-emerald-600"><i class="fa-solid fa-chart-line text-lg"></i></div>
+                    </div>
+                </div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <div><p class="text-xs text-zinc-500 font-medium">Excused Absence Ratio</p><h3 id="ana-excused-count" class="text-3xl font-bold text-sky-600 mt-2">0</h3></div>
+                        <div class="p-2.5 bg-sky-50 dark:bg-sky-950 rounded-lg text-sky-600"><i class="fa-solid fa-notes-medical text-lg"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Attendance Logs Explorer</h2>
+                        <p class="text-xs text-zinc-500">Filter and audit past attendance entries stored in JavaScript DB</p>
+                    </div>
+                    <button onclick="exportToCSV()" class="px-3 py-2 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 text-xs font-semibold rounded-lg transition flex items-center gap-1.5"><i class="fa-solid fa-file-csv text-sm"></i><span>Export CSV</span></button>
+                </div>
+                <div class="p-4 bg-zinc-50 dark:bg-zinc-800/40 border-b border-zinc-200 dark:border-zinc-800 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div><label class="block text-xs font-medium text-zinc-500 mb-1">Subject</label><select id="hist-filter-subject" onchange="renderHistoryLogs()" class="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg"><option value="ALL">All Subjects</option></select></div>
+                    <div><label class="block text-xs font-medium text-zinc-500 mb-1">Section</label><select id="hist-filter-section" onchange="renderHistoryLogs()" class="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg"><option value="ALL">All Sections</option></select></div>
+                    <div><label class="block text-xs font-medium text-zinc-500 mb-1">Status</label><select id="hist-filter-status" onchange="renderHistoryLogs()" class="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg"><option value="ALL">All Statuses</option><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>
+                    <div><label class="block text-xs font-medium text-zinc-500 mb-1">Date</label><input type="date" id="hist-filter-date" onchange="renderHistoryLogs()" class="w-full text-xs px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg"></div>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs tracking-wider border-b border-zinc-200 dark:border-zinc-800 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Date</th>
+                                <th class="px-6 py-3 font-semibold">Student Name (ID)</th>
+                                <th class="px-6 py-3 font-semibold">Subject</th>
+                                <th class="px-6 py-3 font-semibold">Section</th>
+                                <th class="px-6 py-3 font-semibold">Status</th>
+                                <th class="px-6 py-3 font-semibold">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW: Student Portal (Student Grades & Attendance) -->
+        <section id="view-student-portal" class="hidden space-y-6">
+            <!-- Student Header Profile Card -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center space-x-4">
+                    <div id="student-portal-avatar" class="w-14 h-14 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-bold text-xl flex items-center justify-center shadow">
+                        AV
+                    </div>
+                    <div>
+                        <h2 id="student-portal-name" class="text-lg font-bold text-zinc-900 dark:text-zinc-100">Alexander Vance</h2>
+                        <p class="text-xs text-zinc-500"><span id="student-portal-id" class="font-mono font-medium">STU-1001</span> • <span id="student-portal-dept">Computer Science</span> • Section: <span id="student-portal-section" class="font-semibold">CS-101</span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-xs font-semibold border border-emerald-200 dark:border-emerald-800">Enrolled Student Portal</span>
+                </div>
+            </div>
+
+            <!-- Student Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+                    <p class="text-xs text-zinc-500 font-medium">Overall Attendance Rate</p>
+                    <p id="student-stat-rate" class="text-2xl font-bold text-emerald-600 mt-1">0%</p>
+                </div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+                    <p class="text-xs text-zinc-500 font-medium">Classes Attended</p>
+                    <p id="student-stat-present" class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">0</p>
+                </div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+                    <p class="text-xs text-zinc-500 font-medium">Total Assessments</p>
+                    <p id="student-stat-assessments" class="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">0</p>
+                </div>
+                <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4">
+                    <p class="text-xs text-zinc-500 font-medium">Average Grade Score</p>
+                    <p id="student-stat-avggrade" class="text-2xl font-bold text-sky-600 mt-1">0%</p>
+                </div>
+            </div>
+
+            <!-- Student Grades Breakdown Table -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <h3 class="font-semibold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2"><i class="fa-solid fa-award text-amber-500"></i> My Academic Grades & Scores</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Assessment Title</th>
+                                <th class="px-6 py-3 font-semibold">Subject</th>
+                                <th class="px-6 py-3 font-semibold">Type</th>
+                                <th class="px-6 py-3 font-semibold">Date</th>
+                                <th class="px-6 py-3 font-semibold text-center">Score</th>
+                                <th class="px-6 py-3 font-semibold text-right">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-grades-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Student Attendance Logs Table -->
+            <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-zinc-200 dark:border-zinc-800">
+                    <h3 class="font-semibold text-zinc-900 dark:text-zinc-100 text-sm flex items-center gap-2"><i class="fa-solid fa-clipboard-user text-emerald-500"></i> My Attendance History</h3>
+                </div>
+                <div class="overflow-x-auto max-h-72">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-500 uppercase text-xs tracking-wider border-b border-zinc-200 dark:border-zinc-800 sticky top-0">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Date</th>
+                                <th class="px-6 py-3 font-semibold">Subject</th>
+                                <th class="px-6 py-3 font-semibold">Status</th>
+                                <th class="px-6 py-3 font-semibold">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-attendance-table-body" class="divide-y divide-zinc-200 dark:divide-zinc-800">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: Excused Reason Selector -->
+    <div id="modal-excused-reason" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2"><i class="fa-solid fa-notes-medical text-sky-500"></i> Excused Absence Reason</h3>
+            <p class="text-xs text-zinc-500">Select preset reason or enter custom notes for <span id="excused-student-name" class="font-semibold text-zinc-800 dark:text-zinc-200"></span>.</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="selectPresetExcused('Medical Note')" class="px-3 py-2 text-xs bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-left font-medium">🏥 Medical Note</button>
+                <button onclick="selectPresetExcused('Family Emergency')" class="px-3 py-2 text-xs bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-left font-medium">🏠 Family Emergency</button>
+                <button onclick="selectPresetExcused('School Event')" class="px-3 py-2 text-xs bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-left font-medium">🏆 School Event</button>
+                <button onclick="selectPresetExcused('Transport Issue')" class="px-3 py-2 text-xs bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg text-left font-medium">🚌 Transport Issue</button>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-zinc-500 mb-1">Custom Note</label>
+                <input type="text" id="custom-excused-note" placeholder="Enter reason description..." class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-800">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeExcusedModal()" class="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">Cancel</button>
+                <button onclick="saveExcusedReason()" class="px-4 py-2 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Assessment / Quiz -->
+    <div id="modal-assessment-form" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-zinc-900 dark:text-zinc-100 text-base">Create Assessment / Quiz</h3>
+            <form onsubmit="handleSaveAssessment(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-zinc-500 mb-1">Assessment Title</label>
+                    <input type="text" id="assessment-form-title" required placeholder="e.g. Quiz 2: Advanced Trees" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-500 mb-1">Type</label>
+                        <select id="assessment-form-type" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100">
+                            <option value="Quiz">Quiz</option>
+                            <option value="Exam">Exam</option>
+                            <option value="Assignment">Assignment</option>
+                            <option value="Project">Project</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-500 mb-1">Max Score</label>
+                        <input type="number" id="assessment-form-max" required min="1" value="50" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-zinc-500 mb-1">Date</label>
+                    <input type="date" id="assessment-form-date" required class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100">
+                </div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                    <button type="button" onclick="closeAssessmentModal()" class="px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-400">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg">Save Assessment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Add New Section -->
+    <div id="modal-section-form" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-zinc-900 dark:text-zinc-100 text-base">Add New Section</h3>
+            <form onsubmit="handleSaveSection(event)" class="space-y-3">
+                <div><label class="block text-xs font-medium text-zinc-500 mb-1">Section Code</label><input type="text" id="section-form-code" required placeholder="e.g. CS-301" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></div>
+                <div><label class="block text-xs font-medium text-zinc-500 mb-1">Section Name / Description</label><input type="text" id="section-form-name" required placeholder="e.g. Computer Science Sec C" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                    <button type="button" onclick="closeSectionModal()" class="px-4 py-2 text-xs font-semibold text-zinc-600">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg">Save Section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Add / Edit Student -->
+    <div id="modal-student-form" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 id="student-modal-title" class="font-bold text-zinc-900 dark:text-zinc-100 text-base">Add New Student</h3>
+            <form onsubmit="handleSaveStudent(event)" class="space-y-3">
+                <input type="hidden" id="student-form-id">
+                <div><label class="block text-xs font-medium text-zinc-500 mb-1">Student ID Code</label><input type="text" id="student-form-code" required placeholder="e.g. STU-9021" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></div>
+                <div><label class="block text-xs font-medium text-zinc-500 mb-1">Full Name</label><input type="text" id="student-form-name" required placeholder="e.g. Alexander Vance" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></div>
+                <div><label class="block text-xs font-medium text-zinc-500 mb-1">Department</label><input type="text" id="student-form-dept" required placeholder="Computer Science" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></div>
+                <div><label class="block text-xs font-medium text-zinc-500 mb-1">Section</label><select id="student-form-section" required class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></select></div>
+                <div class="flex justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                    <button type="button" onclick="closeStudentModal()" class="px-4 py-2 text-xs font-semibold text-zinc-600">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Bulk Section Move -->
+    <div id="modal-bulk-move" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Move Selected Students</h3>
+            <p class="text-xs text-zinc-500">Choose destination section for selected students.</p>
+            <div><label class="block text-xs font-medium text-zinc-500 mb-1">Target Section</label><select id="bulk-target-section" class="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100"></select></div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeBulkMoveModal()" class="px-4 py-2 text-xs font-semibold text-zinc-600">Cancel</button>
+                <button onclick="executeBulkMove()" class="px-4 py-2 text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-lg">Execute Transfer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Universal Confirmation Modal -->
+    <div id="modal-confirm" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+            <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-400 flex items-center justify-center mx-auto text-base"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 id="confirm-modal-title" class="font-bold text-zinc-900 dark:text-zinc-100 text-sm">Confirm Action</h3>
+            <p id="confirm-modal-msg" class="text-xs text-zinc-500 leading-relaxed"></p>
+            <div class="flex justify-center gap-2 pt-2">
+                <button onclick="closeConfirmModal(false)" class="px-4 py-2 text-xs font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-700 rounded-lg">Cancel</button>
+                <button id="confirm-modal-btn" onclick="closeConfirmModal(true)" class="px-4 py-2 text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 rounded-lg">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
     <script>
-        // Supabase Setup
-        const SUPABASE_URL = 'https://qllcvglmwnidgwhrbjwj.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsbGN2Z2xtd25pZGd3aHJiandqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NzM1NTAsImV4cCI6MjEwNjI0OTU1MH0.1VKb3TIDG_xXtF3RxOLMikz5QKnQ123OHOYZsr78QaY';
-        
-        let supabase = null;
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch (e) {
-            console.error("Supabase init error:", e);
+        /**
+         * ==========================================
+         * 1. JAVASCRIPT DATABASE ENGINE (IndexedDB / Dexie.js v2)
+         * ==========================================
+         */
+        const db = new Dexie('AcademiaSystemDB');
+
+        db.version(2).stores({
+            teachers: 'id, email, name, department',
+            students: 'id, studentId, name, department, sectionId',
+            sections: 'id, code, name',
+            subjects: 'id, code, name',
+            attendance_records: 'id, date, studentId, subjectId, sectionId, status',
+            assessments: 'id, title, subjectId, sectionId, maxScore, date, type',
+            scores: 'id, assessmentId, studentId, score'
+        });
+
+        const AppDB = {
+            async initDB() {
+                try {
+                    await db.open();
+                    const teacherCount = await db.teachers.count();
+                    if (teacherCount === 0) {
+                        await this.seedInitialData();
+                    }
+                    this.updateNavbarStatus("JS IndexedDB Active");
+                } catch (err) {
+                    console.error("Database Init Failed:", err);
+                    this.updateNavbarStatus("IndexedDB Init Error");
+                }
+            },
+
+            updateNavbarStatus(msg) {
+                const el = document.getElementById('db-status-text');
+                if (el) el.innerText = msg;
+            },
+
+            async seedInitialData() {
+                await db.teachers.clear();
+                await db.students.clear();
+                await db.sections.clear();
+                await db.subjects.clear();
+                await db.attendance_records.clear();
+                await db.assessments.clear();
+                await db.scores.clear();
+
+                const teachers = [
+                    { id: 't1', email: 'sarah.jenkins@university.edu', name: 'Prof. Sarah Jenkins', department: 'Computer Science', role: 'Department Head' },
+                    { id: 't2', email: 'mark.davis@university.edu', name: 'Prof. Mark Davis', department: 'Mathematics', role: 'Associate Professor' }
+                ];
+
+                const sections = [
+                    { id: 'sec-cs101', code: 'CS-101', name: 'Computer Science Sec A' },
+                    { id: 'sec-cs202', code: 'CS-202', name: 'Computer Science Sec B' },
+                    { id: 'sec-m101', code: 'MATH-101', name: 'Calculus & Algebra Sec 1' }
+                ];
+
+                const subjects = [
+                    { id: 'sub-alg', code: 'CS101-ALG', name: 'Algorithms & Data Structures' },
+                    { id: 'sub-web', code: 'CS202-WEB', name: 'Full-Stack Web Engineering' },
+                    { id: 'sub-mth', code: 'MTH101-CAL', name: 'Linear Algebra & Calculus' }
+                ];
+
+                const students = [
+                    { id: 'st-1', studentId: 'STU-1001', name: 'Alexander Vance', department: 'Computer Science', sectionId: 'sec-cs101' },
+                    { id: 'st-2', studentId: 'STU-1002', name: 'Beatrix Thorne', department: 'Computer Science', sectionId: 'sec-cs101' },
+                    { id: 'st-3', studentId: 'STU-1003', name: 'Cyrus Sterling', department: 'Computer Science', sectionId: 'sec-cs101' },
+                    { id: 'st-4', studentId: 'STU-1004', name: 'Diana Prince', department: 'Computer Science', sectionId: 'sec-cs101' },
+                    { id: 'st-5', studentId: 'STU-1005', name: 'Ethan Hunt', department: 'Computer Science', sectionId: 'sec-cs101' },
+                    { id: 'st-6', studentId: 'STU-2001', name: 'Fiona Gallagher', department: 'Computer Science', sectionId: 'sec-cs202' },
+                    { id: 'st-7', studentId: 'STU-2002', name: 'Gabriel Ross', department: 'Computer Science', sectionId: 'sec-cs202' },
+                    { id: 'st-8', studentId: 'STU-2003', name: 'Hannah Abbott', department: 'Computer Science', sectionId: 'sec-cs202' },
+                    { id: 'st-9', studentId: 'STU-3001', name: 'Ian Malcolm', department: 'Mathematics', sectionId: 'sec-m101' },
+                    { id: 'st-10', studentId: 'STU-3002', name: 'Julia Roberts', department: 'Mathematics', sectionId: 'sec-m101' }
+                ];
+
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+                const attendanceRecords = [
+                    { id: 'att-1', date: yesterday, studentId: 'st-1', subjectId: 'sub-alg', sectionId: 'sec-cs101', status: 'present', excusedReason: '', timestamp: Date.now(), markedByTeacherId: 't1' },
+                    { id: 'att-2', date: yesterday, studentId: 'st-2', subjectId: 'sub-alg', sectionId: 'sec-cs101', status: 'present', excusedReason: '', timestamp: Date.now(), markedByTeacherId: 't1' },
+                    { id: 'att-3', date: yesterday, studentId: 'st-3', subjectId: 'sub-alg', sectionId: 'sec-cs101', status: 'absent', excusedReason: '', timestamp: Date.now(), markedByTeacherId: 't1' },
+                    { id: 'att-4', date: yesterday, studentId: 'st-4', subjectId: 'sub-alg', sectionId: 'sec-cs101', status: 'excused', excusedReason: 'Medical Note', timestamp: Date.now(), markedByTeacherId: 't1' },
+                    { id: 'att-5', date: yesterday, studentId: 'st-5', subjectId: 'sub-alg', sectionId: 'sec-cs101', status: 'late', excusedReason: '', timestamp: Date.now(), markedByTeacherId: 't1' },
+                    { id: 'att-6', date: today, studentId: 'st-1', subjectId: 'sub-alg', sectionId: 'sec-cs101', status: 'present', excusedReason: '', timestamp: Date.now(), markedByTeacherId: 't1' }
+                ];
+
+                const assessments = [
+                    { id: 'ast-1', title: 'Quiz 1: Algorithmic Complexity', subjectId: 'sub-alg', sectionId: 'sec-cs101', maxScore: 50, date: '2026-09-20', type: 'Quiz' },
+                    { id: 'ast-2', title: 'Midterm Practical Exam', subjectId: 'sub-alg', sectionId: 'sec-cs101', maxScore: 100, date: '2026-09-25', type: 'Exam' }
+                ];
+
+                const scores = [
+                    { id: 'sco-1', assessmentId: 'ast-1', studentId: 'st-1', score: 45 },
+                    { id: 'sco-2', assessmentId: 'ast-1', studentId: 'st-2', score: 42 },
+                    { id: 'sco-3', assessmentId: 'ast-1', studentId: 'st-3', score: 38 },
+                    { id: 'sco-4', assessmentId: 'ast-1', studentId: 'st-4', score: 49 },
+                    { id: 'sco-5', assessmentId: 'ast-2', studentId: 'st-1', score: 92 },
+                    { id: 'sco-6', assessmentId: 'ast-2', studentId: 'st-2', score: 88 }
+                ];
+
+                await db.teachers.bulkAdd(teachers);
+                await db.sections.bulkAdd(sections);
+                await db.subjects.bulkAdd(subjects);
+                await db.students.bulkAdd(students);
+                await db.attendance_records.bulkAdd(attendanceRecords);
+                await db.assessments.bulkAdd(assessments);
+                await db.scores.bulkAdd(scores);
+
+                showToast('IndexedDB initialized with demo academic data!');
+            },
+
+            async getTeachers() { return await db.teachers.toArray(); },
+            async getSections() { return await db.sections.toArray(); },
+            async getSubjects() { return await db.subjects.toArray(); },
+            async getStudents(sectionId = null) {
+                if (sectionId && sectionId !== 'ALL') {
+                    return await db.students.where('sectionId').equals(sectionId).toArray();
+                }
+                return await db.students.toArray();
+            },
+            async saveSection(sectionData) {
+                if (!sectionData.id) sectionData.id = 'sec-' + Date.now();
+                await db.sections.put(sectionData);
+                return sectionData;
+            },
+            async saveStudent(studentData) {
+                if (!studentData.id) studentData.id = 'st-' + Date.now();
+                await db.students.put(studentData);
+                return studentData;
+            },
+            async deleteStudent(studentId) {
+                await db.students.delete(studentId);
+                await db.attendance_records.where('studentId').equals(studentId).delete();
+                await db.scores.where('studentId').equals(studentId).delete();
+            },
+            async bulkDeleteStudents(studentIds) {
+                await db.students.bulkDelete(studentIds);
+            },
+            async updateStudentSection(studentId, newSectionId) {
+                await db.students.update(studentId, { sectionId: newSectionId });
+            },
+            async saveAttendance(records) {
+                for (const rec of records) {
+                    const existing = await db.attendance_records
+                        .where({ date: rec.date, studentId: rec.studentId, subjectId: rec.subjectId })
+                        .first();
+                    if (existing) {
+                        await db.attendance_records.update(existing.id, rec);
+                    } else {
+                        if (!rec.id) rec.id = 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+                        await db.attendance_records.add(rec);
+                    }
+                }
+            },
+            async getAttendanceForDateAndSection(date, sectionId, subjectId) {
+                return await db.attendance_records
+                    .where('date').equals(date)
+                    .filter(r => r.sectionId === sectionId && r.subjectId === subjectId)
+                    .toArray();
+            },
+            async getAttendanceLogs() { return await db.attendance_records.toArray(); },
+
+            // Assessment & Scores Methods
+            async getAssessments(sectionId, subjectId) {
+                let list = await db.assessments.toArray();
+                if (sectionId && sectionId !== 'ALL') list = list.filter(a => a.sectionId === sectionId);
+                if (subjectId && subjectId !== 'ALL') list = list.filter(a => a.subjectId === subjectId);
+                return list;
+            },
+            async saveAssessment(data) {
+                if (!data.id) data.id = 'ast-' + Date.now();
+                await db.assessments.put(data);
+                return data;
+            },
+            async deleteAssessment(id) {
+                await db.assessments.delete(id);
+                await db.scores.where('assessmentId').equals(id).delete();
+            },
+            async getScoresForAssessment(assessmentId) {
+                return await db.scores.where('assessmentId').equals(assessmentId).toArray();
+            },
+            async saveScores(scoresList) {
+                for (const s of scoresList) {
+                    const existing = await db.scores.where({ assessmentId: s.assessmentId, studentId: s.studentId }).first();
+                    if (existing) {
+                        await db.scores.update(existing.id, { score: s.score });
+                    } else {
+                        if (!s.id) s.id = 'sco-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+                        await db.scores.add(s);
+                    }
+                }
+            },
+            async getStudentScores(studentId) {
+                return await db.scores.where('studentId').equals(studentId).toArray();
+            },
+            async getStudentAttendance(studentId) {
+                return await db.attendance_records.where('studentId').equals(studentId).toArray();
+            }
+        };
+
+        /**
+         * ==========================================
+         * 2. GLOBAL STATE & AUTHENTICATION
+         * ==========================================
+         */
+        let currentUser = null; // { type: 'teacher'|'student', ...data }
+        let currentTab = 'mark-attendance';
+        let currentAttendanceState = {};
+        let currentStudentsCache = [];
+        let selectedRosterIds = new Set();
+        let activeExcusedStudentId = null;
+        let activeAssessmentId = null;
+        let currentScoresState = {}; // studentId -> score
+        let pendingConfirmCallback = null;
+
+        window.onload = async function() {
+            document.getElementById('att-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('assessment-form-date').value = new Date().toISOString().split('T')[0];
+
+            await AppDB.initDB();
+            await populateDropdowns();
+            checkSession();
+        };
+
+        function setLoginMode(mode) {
+            const tTab = document.getElementById('login-tab-teacher');
+            const sTab = document.getElementById('login-tab-student');
+            const tForm = document.getElementById('login-form-teacher');
+            const sForm = document.getElementById('login-form-student');
+
+            if (mode === 'teacher') {
+                tTab.className = 'py-2 text-xs font-semibold rounded-md transition bg-white dark:bg-zinc-900 shadow-xs text-zinc-900 dark:text-zinc-100';
+                sTab.className = 'py-2 text-xs font-semibold rounded-md transition text-zinc-500 dark:text-zinc-400';
+                tForm.classList.remove('hidden');
+                sForm.classList.add('hidden');
+            } else {
+                sTab.className = 'py-2 text-xs font-semibold rounded-md transition bg-white dark:bg-zinc-900 shadow-xs text-zinc-900 dark:text-zinc-100';
+                tTab.className = 'py-2 text-xs font-semibold rounded-md transition text-zinc-500 dark:text-zinc-400';
+                sForm.classList.remove('hidden');
+                tForm.classList.add('hidden');
+                populateStudentLoginDropdown();
+            }
         }
 
-        function switchToRegister() {
-            document.getElementById('login-container').classList.add('hidden');
-            document.getElementById('register-container').classList.remove('hidden');
-            clearAlerts();
+        async function populateStudentLoginDropdown() {
+            const students = await AppDB.getStudents();
+            const select = document.getElementById('student-login-select');
+            select.innerHTML = students.map(s => `<option value="${s.id}">${s.name} (${s.studentId}) — Section: ${s.sectionId}</option>`).join('');
         }
 
-        function switchToLogin() {
-            document.getElementById('register-container').classList.add('hidden');
-            document.getElementById('login-container').classList.remove('hidden');
-            clearAlerts();
+        async function checkSession() {
+            const saved = localStorage.getItem('academiax_active_user');
+            if (saved) {
+                currentUser = JSON.parse(saved);
+                renderUserNavbar();
+                renderNavTabs();
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('app-nav-tabs').classList.remove('hidden');
+
+                if (currentUser.type === 'student') {
+                    switchTab('student-portal');
+                } else {
+                    switchTab('mark-attendance');
+                }
+            } else {
+                renderUserNavbar();
+                renderDemoTeachersList();
+                document.getElementById('view-login').classList.remove('hidden');
+                document.getElementById('app-nav-tabs').classList.add('hidden');
+                hideAllViews();
+            }
         }
 
-        // Register Handler
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
+        async function renderDemoTeachersList() {
+            const teachers = await AppDB.getTeachers();
+            const container = document.getElementById('demo-teachers-list');
+            container.innerHTML = teachers.map(t => `
+                <button type="button" onclick="quickTeacherLogin('${t.email}')" class="w-full p-2.5 bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/60 rounded-lg text-left transition flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${t.name}</p>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${t.department} • ${t.email}</p>
+                    </div>
+                    <i class="fa-solid fa-arrow-right-to-bracket text-zinc-400 text-xs"></i>
+                </button>
+            `).join('');
+        }
+
+        async function quickTeacherLogin(email) {
+            const teachers = await AppDB.getTeachers();
+            const found = teachers.find(t => t.email === email);
+            if (found) {
+                currentUser = { type: 'teacher', ...found };
+                localStorage.setItem('academiax_active_user', JSON.stringify(currentUser));
+                checkSession();
+                showToast(`Welcome back, ${currentUser.name}`);
+            }
+        }
+
+        function handleTeacherLogin(e) {
             e.preventDefault();
-            if (!supabase) return alert('Supabase error!');
+            const email = document.getElementById('login-email').value;
+            quickTeacherLogin(email);
+        }
 
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const role = document.getElementById('register-role').value;
+        async function handleStudentLogin(e) {
+            e.preventDefault();
+            const studentId = document.getElementById('student-login-select').value;
+            const students = await AppDB.getStudents();
+            const found = students.find(s => s.id === studentId);
+            if (found) {
+                currentUser = { type: 'student', ...found };
+                localStorage.setItem('academiax_active_user', JSON.stringify(currentUser));
+                checkSession();
+                showToast(`Welcome to Student Portal, ${currentUser.name}!`);
+            }
+        }
 
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-                options: { data: { role: role } }
+        function logout() {
+            localStorage.removeItem('academiax_active_user');
+            currentUser = null;
+            checkSession();
+            showToast('Signed out successfully.');
+        }
+
+        function renderUserNavbar() {
+            const container = document.getElementById('user-navbar-container');
+            if (currentUser) {
+                const initials = currentUser.name.split(' ').map(n=>n[0]).join('');
+                container.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full bg-zinc-800 dark:bg-zinc-200 text-white dark:text-zinc-900 font-bold text-xs flex items-center justify-center">
+                            ${initials}
+                        </div>
+                        <div class="hidden sm:block text-left">
+                            <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 leading-none">${currentUser.name}</p>
+                            <p class="text-[10px] text-zinc-500 leading-tight mt-0.5">${currentUser.type === 'student' ? 'Student Portal' : currentUser.department}</p>
+                        </div>
+                        <button onclick="logout()" title="Logout" class="p-1.5 text-zinc-400 hover:text-rose-600 transition"><i class="fa-solid fa-arrow-right-from-bracket text-xs"></i></button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `<span class="text-xs font-semibold text-zinc-400">Not Logged In</span>`;
+            }
+        }
+
+        function renderNavTabs() {
+            const container = document.getElementById('nav-tabs-container');
+            if (currentUser && currentUser.type === 'student') {
+                container.innerHTML = `
+                    <button onclick="switchTab('student-portal')" id="tab-student-portal" class="tab-btn py-3 px-1 border-b-2 border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-white font-medium text-sm flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-gauge text-xs"></i><span>My Grades & Attendance</span>
+                    </button>
+                `;
+            } else {
+                container.innerHTML = `
+                    <button onclick="switchTab('mark-attendance')" id="tab-mark-attendance" class="tab-btn py-3 px-1 border-b-2 border-zinc-900 dark:border-zinc-100 text-zinc-900 dark:text-white font-medium text-sm flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-check-double text-xs"></i><span>Mark Attendance</span></button>
+                    <button onclick="switchTab('gradebook')" id="tab-gradebook" class="tab-btn py-3 px-1 border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 font-medium text-sm flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-book-open text-xs"></i><span>Gradebook & Scores</span></button>
+                    <button onclick="switchTab('student-roster')" id="tab-student-roster" class="tab-btn py-3 px-1 border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 font-medium text-sm flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-users text-xs"></i><span>Student Roster</span></button>
+                    <button onclick="switchTab('reports-analytics')" id="tab-reports-analytics" class="tab-btn py-3 px-1 border-b-2 border-transparent text-zinc-500 hover:text-zinc-700 font-medium text-sm flex items-center gap-2 whitespace-nowrap"><i class="fa-solid fa-chart-pie text-xs"></i><span>Analytics & History</span></button>
+                `;
+            }
+        }
+
+        /**
+         * ==========================================
+         * 3. NAVIGATION & VIEW CONTROLLER
+         * ==========================================
+         */
+        function hideAllViews() {
+            ['mark-attendance', 'gradebook', 'student-roster', 'reports-analytics', 'student-portal'].forEach(id => {
+                const el = document.getElementById(`view-${id}`);
+                if (el) el.classList.add('hidden');
+            });
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            hideAllViews();
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-zinc-900', 'dark:border-zinc-100', 'text-zinc-900', 'dark:text-white');
+                btn.classList.add('border-transparent', 'text-zinc-500', 'dark:text-zinc-400');
             });
 
-            if (error) {
-                showAlert('register-alert', error.message, true);
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-zinc-500', 'dark:text-zinc-400');
+                activeBtn.classList.add('border-zinc-900', 'dark:border-zinc-100', 'text-zinc-900', 'dark:text-white');
+            }
+
+            const viewEl = document.getElementById(`view-${tabId}`);
+            if (viewEl) viewEl.classList.remove('hidden');
+
+            if (tabId === 'mark-attendance') loadAttendanceSheet();
+            if (tabId === 'gradebook') loadGradebook();
+            if (tabId === 'student-roster') renderRosterTable();
+            if (tabId === 'reports-analytics') renderAnalyticsView();
+            if (tabId === 'student-portal') renderStudentPortalView();
+        }
+
+        async function populateDropdowns() {
+            const sections = await AppDB.getSections();
+            const subjects = await AppDB.getSubjects();
+
+            // Attendance Dropdowns
+            const attSubject = document.getElementById('att-subject-select');
+            if (attSubject) attSubject.innerHTML = subjects.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+            const attSection = document.getElementById('att-section-select');
+            if (attSection) attSection.innerHTML = sections.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+
+            // Gradebook Dropdowns
+            const gradeSubj = document.getElementById('grade-subject-select');
+            if (gradeSubj) gradeSubj.innerHTML = subjects.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+            const gradeSec = document.getElementById('grade-section-select');
+            if (gradeSec) gradeSec.innerHTML = sections.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+
+            // Roster Filter
+            const rosterFilter = document.getElementById('roster-section-filter');
+            if (rosterFilter) rosterFilter.innerHTML = `<option value="ALL">All Sections</option>` + sections.map(s => `<option value="${s.id}">${s.code}</option>`).join('');
+
+            // Student Form Section
+            const studentFormSec = document.getElementById('student-form-section');
+            if (studentFormSec) studentFormSec.innerHTML = sections.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+
+            // Bulk Move Section
+            const bulkMoveSec = document.getElementById('bulk-target-section');
+            if (bulkMoveSec) bulkMoveSec.innerHTML = sections.map(s => `<option value="${s.id}">${s.code} - ${s.name}</option>`).join('');
+
+            // History Filter
+            const histSubj = document.getElementById('hist-filter-subject');
+            if (histSubj) histSubj.innerHTML = `<option value="ALL">All Subjects</option>` + subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            const histSec = document.getElementById('hist-filter-section');
+            if (histSec) histSec.innerHTML = `<option value="ALL">All Sections</option>` + sections.map(s => `<option value="${s.id}">${s.code}</option>`).join('');
+        }
+
+        /**
+         * ==========================================
+         * 4. GRADEBOOK & SCORE ENCODING (Teacher)
+         * ==========================================
+         */
+        async function loadGradebook() {
+            const subjectId = document.getElementById('grade-subject-select').value;
+            const sectionId = document.getElementById('grade-section-select').value;
+
+            const assessments = await AppDB.getAssessments(sectionId, subjectId);
+            const container = document.getElementById('assessments-list-container');
+
+            if (assessments.length === 0) {
+                container.innerHTML = `<p class="text-xs text-zinc-400 p-3 text-center">No assessments created for this filter yet.</p>`;
+                activeAssessmentId = null;
+                renderScoresTable();
+                return;
+            }
+
+            if (!activeAssessmentId || !assessments.some(a => a.id === activeAssessmentId)) {
+                activeAssessmentId = assessments[0].id;
+            }
+
+            container.innerHTML = assessments.map(ast => {
+                const isActive = ast.id === activeAssessmentId;
+                return `
+                    <div onclick="selectAssessment('${ast.id}')" class="p-3 rounded-xl border cursor-pointer transition flex items-center justify-between ${isActive ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800'}">
+                        <div>
+                            <span class="text-[10px] uppercase font-mono px-2 py-0.5 rounded ${isActive ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-900' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300'}">${ast.type}</span>
+                            <h4 class="text-xs font-bold mt-1">${ast.title}</h4>
+                            <p class="text-[11px] opacity-80 mt-0.5">Max Score: ${ast.maxScore} • ${ast.date}</p>
+                        </div>
+                        <button onclick="event.stopPropagation(); confirmDeleteAssessment('${ast.id}', '${ast.title.replace(/'/g, "\\'")}')" class="p-1.5 opacity-60 hover:opacity-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    </div>
+                `;
+            }).join('');
+
+            renderScoresTable();
+        }
+
+        async function selectAssessment(id) {
+            activeAssessmentId = id;
+            loadGradebook();
+        }
+
+        async function renderScoresTable() {
+            const tbody = document.getElementById('scores-table-body');
+            const titleEl = document.getElementById('active-assessment-title');
+            const metaEl = document.getElementById('active-assessment-meta');
+
+            if (!activeAssessmentId) {
+                titleEl.innerText = "Select an Assessment";
+                metaEl.innerText = "Max Score: — • Date: —";
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-xs text-zinc-400">Please select an assessment from the left panel.</td></tr>`;
+                return;
+            }
+
+            const assessments = await AppDB.getAssessments();
+            const ast = assessments.find(a => a.id === activeAssessmentId);
+            if (!ast) return;
+
+            titleEl.innerText = ast.title;
+            metaEl.innerText = `Type: ${ast.type} • Max Score: ${ast.maxScore} • Date: ${ast.date}`;
+
+            const students = await AppDB.getStudents(ast.sectionId);
+            const existingScores = await AppDB.getScoresForAssessment(ast.id);
+
+            currentScoresState = {};
+            students.forEach(s => {
+                const found = existingScores.find(sc => sc.studentId === s.id);
+                currentScoresState[s.id] = found ? found.score : '';
+            });
+
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-xs text-zinc-400">No students enrolled in this assessment's section.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = students.map(s => {
+                const scVal = currentScoresState[s.id] !== undefined ? currentScoresState[s.id] : '';
+                const pct = scVal !== '' && !isNaN(scVal) ? Math.round((Number(scVal) / ast.maxScore) * 100) : 0;
+                return `
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/45 transition">
+                        <td class="px-6 py-3.5 font-mono text-xs font-semibold text-zinc-500">${s.studentId}</td>
+                        <td class="px-6 py-3.5 font-medium text-zinc-900 dark:text-zinc-100">${s.name}</td>
+                        <td class="px-6 py-3.5 text-center">
+                            <input type="number" min="0" max="${ast.maxScore}" value="${scVal}" oninput="updateScoreState('${s.id}', this.value, ${ast.maxScore}, this)" class="w-24 px-2.5 py-1 text-center text-xs font-bold bg-zinc-50 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-zinc-900">
+                        </td>
+                        <td class="px-6 py-3.5 text-right font-mono text-xs font-semibold" id="pct-cell-${s.id}">
+                            ${scVal !== '' ? `${pct}%` : '—'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateScoreState(studentId, val, maxScore, inputEl) {
+            let num = val === '' ? '' : Number(val);
+            if (num > maxScore) num = maxScore;
+            currentScoresState[studentId] = num;
+
+            const pctCell = document.getElementById(`pct-cell-${studentId}`);
+            if (num !== '' && !isNaN(num)) {
+                pctCell.innerText = `${Math.round((num / maxScore) * 100)}%`;
             } else {
-                showAlert('register-alert', 'Registered na! Pwede ka nang mag-sign in.', false);
-                setTimeout(switchToLogin, 1500);
+                pctCell.innerText = '—';
             }
-        });
+        }
 
-        // Login Handler
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+        async function saveCurrentScores() {
+            if (!activeAssessmentId) return;
+            const records = Object.keys(currentScoresState).map(studentId => ({
+                assessmentId: activeAssessmentId,
+                studentId,
+                score: currentScoresState[studentId] === '' ? 0 : Number(currentScoresState[studentId])
+            }));
+
+            await AppDB.saveScores(records);
+            showToast('Scores saved successfully to IndexedDB!');
+        }
+
+        function openAddAssessmentModal() {
+            document.getElementById('assessment-form-title').value = '';
+            document.getElementById('modal-assessment-form').classList.remove('hidden');
+        }
+
+        function closeAssessmentModal() {
+            document.getElementById('modal-assessment-form').classList.add('hidden');
+        }
+
+        async function handleSaveAssessment(e) {
             e.preventDefault();
-            if (!supabase) return alert('Supabase error!');
+            const title = document.getElementById('assessment-form-title').value.trim();
+            const type = document.getElementById('assessment-form-type').value;
+            const maxScore = Number(document.getElementById('assessment-form-max').value);
+            const date = document.getElementById('assessment-form-date').value;
+            const subjectId = document.getElementById('grade-subject-select').value;
+            const sectionId = document.getElementById('grade-section-select').value;
 
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+            const newAst = await AppDB.saveAssessment({ title, type, maxScore, date, subjectId, sectionId });
+            activeAssessmentId = newAst.id;
+            closeAssessmentModal();
+            loadGradebook();
+            showToast('Assessment created successfully!');
+        }
 
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+        function confirmDeleteAssessment(id, title) {
+            showConfirmModal("Delete Assessment", `Permanently delete assessment "${title}" and all associated student scores?`, async () => {
+                await AppDB.deleteAssessment(id);
+                activeAssessmentId = null;
+                loadGradebook();
+                showToast('Assessment deleted.');
+            });
+        }
 
-            if (error) {
-                showAlert('login-alert', error.message, true);
-            }
-        });
+        /**
+         * ==========================================
+         * 5. STUDENT PORTAL (View Personal Grades & Attendance)
+         * ==========================================
+         */
+        async function renderStudentPortalView() {
+            if (!currentUser || currentUser.type !== 'student') return;
 
-        // Real-time Auth State Handler
-        if (supabase) {
-            supabase.auth.onAuthStateChange((event, session) => {
-                document.getElementById('login-container').classList.add('hidden');
-                document.getElementById('register-container').classList.add('hidden');
-                document.getElementById('teacher-dashboard').classList.add('hidden');
-                document.getElementById('student-dashboard').classList.add('hidden');
+            const student = currentUser;
+            document.getElementById('student-portal-name').innerText = student.name;
+            document.getElementById('student-portal-id').innerText = student.studentId;
+            document.getElementById('student-portal-dept').innerText = student.department;
+            document.getElementById('student-portal-section').innerText = student.sectionId;
+            document.getElementById('student-portal-avatar').innerText = student.name.split(' ').map(n=>n[0]).join('');
 
-                if (session) {
-                    const user = session.user;
-                    const role = user.user_metadata?.role || 'student';
+            // Fetch student attendance
+            const attendance = await AppDB.getStudentAttendance(student.id);
+            const totalAtt = attendance.length;
+            const presentAtt = attendance.filter(a => a.status === 'present' || a.status === 'late').length;
+            const attRate = totalAtt > 0 ? Math.round((presentAtt / totalAtt) * 100) : 0;
 
-                    if (role === 'teacher') {
-                        document.getElementById('teacher-dashboard').classList.remove('hidden');
-                        document.getElementById('teacher-email').textContent = user.email;
-                    } else {
-                        document.getElementById('student-dashboard').classList.remove('hidden');
-                        document.getElementById('student-email').textContent = user.email;
-                        loadStudentPortalData(user.email);
-                    }
-                } else {
-                    document.getElementById('login-container').classList.remove('hidden');
+            document.getElementById('student-stat-rate').innerText = `${attRate}%`;
+            document.getElementById('student-stat-present').innerText = `${presentAtt} / ${totalAtt}`;
+
+            // Fetch student scores & assessments
+            const scores = await AppDB.getStudentScores(student.id);
+            const assessments = await AppDB.getAssessments();
+            const subjects = await AppDB.getSubjects();
+
+            document.getElementById('student-stat-assessments').innerText = scores.length;
+
+            let totalPercentage = 0;
+            scores.forEach(sc => {
+                const ast = assessments.find(a => a.id === sc.assessmentId);
+                if (ast && ast.maxScore > 0) {
+                    totalPercentage += (sc.score / ast.maxScore) * 100;
                 }
             });
-        }
+            const avgGrade = scores.length > 0 ? Math.round(totalPercentage / scores.length) : 0;
+            document.getElementById('student-stat-avggrade').innerText = `${avgGrade}%`;
 
-        async function logout() {
-            if (supabase) await supabase.auth.signOut();
-        }
-
-        // Fetch Student Data (Assignments, Grades, Attendance)
-        async function loadStudentPortalData(email) {
-            // 1. Fetch Assignments
-            const { data: assignments, error: errAssign } = await supabase
-                .from('assignments')
-                .select('*')
-                .order('id', { ascending: false });
-
-            const assignListEl = document.getElementById('student-assignments-list');
-            if (errAssign || !assignments || assignments.length === 0) {
-                assignListEl.innerHTML = `<p class="text-indigo-700">Walang pang assignments na pinapaskil.</p>`;
+            // Render Grades Table
+            const gradesTbody = document.getElementById('student-grades-table-body');
+            if (scores.length === 0) {
+                gradesTbody.innerHTML = `<tr><td colspan="6" class="px-6 py-6 text-center text-xs text-zinc-400">No grade scores recorded yet.</td></tr>`;
             } else {
-                assignListEl.innerHTML = assignments.map(a => `<div class="bg-white p-2 rounded border">📌 ${a.title}</div>`).join('');
+                gradesTbody.innerHTML = scores.map(sc => {
+                    const ast = assessments.find(a => a.id === sc.assessmentId) || { title: 'Unknown', type: 'Quiz', maxScore: 100, date: '—', subjectId: '' };
+                    const subj = subjects.find(s => s.id === ast.subjectId) || { code: 'SUBJ' };
+                    const pct = Math.round((sc.score / ast.maxScore) * 100);
+                    return `
+                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                            <td class="px-6 py-3.5 font-medium text-zinc-900 dark:text-zinc-100">${ast.title}</td>
+                            <td class="px-6 py-3.5 text-xs text-zinc-600 dark:text-zinc-300">${subj.code}</td>
+                            <td class="px-6 py-3.5"><span class="px-2 py-0.5 text-[10px] font-mono rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 uppercase">${ast.type}</span></td>
+                            <td class="px-6 py-3.5 text-xs text-zinc-500 font-mono">${ast.date}</td>
+                            <td class="px-6 py-3.5 text-center font-bold text-zinc-900 dark:text-zinc-100">${sc.score} / ${ast.maxScore}</td>
+                            <td class="px-6 py-3.5 text-right font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">${pct}%</td>
+                        </tr>
+                    `;
+                }).join('');
             }
 
-            // 2. Fetch Grades
-            const { data: grades, error: errGrades } = await supabase
-                .from('grades')
-                .select('*')
-                .eq('student_email', email);
-
-            const gradesListEl = document.getElementById('student-grades-list');
-            if (errGrades || !grades || grades.length === 0) {
-                gradesListEl.innerHTML = `<p class="text-emerald-700">Wala pang nakatalang grades.</p>`;
+            // Render Attendance Logs Table
+            const attTbody = document.getElementById('student-attendance-table-body');
+            if (attendance.length === 0) {
+                attTbody.innerHTML = `<tr><td colspan="4" class="px-6 py-6 text-center text-xs text-zinc-400">No attendance logs found.</td></tr>`;
             } else {
-                gradesListEl.innerHTML = grades.map(g => `<div class="bg-white p-2 rounded border flex justify-between"><span>📚 <strong>${g.subject}</strong></span> <span class="font-bold text-emerald-600">${g.grade} (${g.remarks || 'N/A'})</span></div>`).join('');
-            }
+                attTbody.innerHTML = attendance.map(att => {
+                    const subj = subjects.find(s => s.id === att.subjectId) || { code: att.subjectId };
+                    let badgeColor = 'bg-zinc-100 text-zinc-800';
+                    if (att.status === 'present') badgeColor = 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300';
+                    if (att.status === 'absent') badgeColor = 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300';
+                    if (att.status === 'late') badgeColor = 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300';
+                    if (att.status === 'excused') badgeColor = 'bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300';
 
-            // 3. Fetch Attendance
-            const { data: attendance, error: errAtt } = await supabase
-                .from('attendance')
-                .select('*')
-                .eq('student_email', email)
-                .order('date', { ascending: false });
-
-            const attListEl = document.getElementById('student-attendance-list');
-            if (errAtt || !attendance || attendance.length === 0) {
-                attListEl.innerHTML = `<p class="text-amber-700">Wala pang attendance records.</p>`;
-            } else {
-                attListEl.innerHTML = attendance.map(att => `<div class="bg-white p-2 rounded border flex justify-between"><span>📅 ${att.date}</span> <span class="font-semibold ${att.status === 'Present' ? 'text-emerald-600' : 'text-rose-600'}">${att.status}</span></div>`).join('');
-            }
-        }
-
-        // Post Assignment Function for Teachers
-        async function postAssignment() {
-            const title = document.getElementById('assignment-title').value;
-            if (!title) return alert('Lagyan ng pamagat!');
-
-            const { error } = await supabase.from('assignments').insert([{ title }]);
-            if (error) {
-                alert('Error sa pag-post: ' + error.message);
-            } else {
-                alert(`Nai-post na ang assignment: ${title}`);
-                document.getElementById('assignment-title').value = '';
+                    return `
+                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                            <td class="px-6 py-3 font-mono text-xs text-zinc-500">${att.date}</td>
+                            <td class="px-6 py-3 text-xs text-zinc-600 dark:text-zinc-300">${subj.code}</td>
+                            <td class="px-6 py-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider ${badgeColor}">${att.status}</span></td>
+                            <td class="px-6 py-3 text-xs text-zinc-500">${att.excusedReason || '—'}</td>
+                        </tr>
+                    `;
+                }).join('');
             }
         }
 
-        function showAlert(elementId, msg, isErr) {
-            const el = document.getElementById(elementId);
-            el.textContent = msg;
-            el.className = `p-3 rounded-lg text-xs font-medium text-center ${isErr ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`;
-            el.classList.remove('hidden');
+        /**
+         * ==========================================
+         * 6. ATTENDANCE MARKING & SECTION MGMT
+         * ==========================================
+         */
+        async function loadAttendanceSheet() {
+            const sectionId = document.getElementById('att-section-select').value;
+            const subjectId = document.getElementById('att-subject-select').value;
+            const date = document.getElementById('att-date').value;
+
+            if (!sectionId || !subjectId || !date) return;
+
+            currentStudentsCache = await AppDB.getStudents(sectionId);
+            const savedRecords = await AppDB.getAttendanceForDateAndSection(date, sectionId, subjectId);
+
+            currentAttendanceState = {};
+            currentStudentsCache.forEach(s => {
+                const rec = savedRecords.find(r => r.studentId === s.id);
+                currentAttendanceState[s.id] = {
+                    status: rec ? rec.status : 'present',
+                    reason: rec ? rec.excusedReason || '' : ''
+                };
+            });
+
+            renderAttendanceSheetUI();
         }
 
-        function clearAlerts() {
-            document.getElementById('login-alert').classList.add('hidden');
-            document.getElementById('register-alert').classList.add('hidden');
+        function renderAttendanceSheetUI() {
+            const students = currentStudentsCache;
+            const tbody = document.getElementById('attendance-table-body');
+
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-xs text-zinc-400">No students enrolled in this section.</td></tr>`;
+            } else {
+                tbody.innerHTML = students.map(s => {
+                    const stState = currentAttendanceState[s.id] || { status: 'present', reason: '' };
+                    const safeName = (s.name || '').replace(/'/g, "\\'");
+                    return `
+                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                            <td class="px-6 py-3.5 font-mono text-xs font-semibold text-zinc-500">${s.studentId}</td>
+                            <td class="px-6 py-3.5 font-medium text-zinc-900 dark:text-zinc-100">${s.name}</td>
+                            <td class="px-6 py-3.5 text-xs text-zinc-500">${s.department}</td>
+                            <td class="px-6 py-3.5 text-center">
+                                <div class="inline-flex rounded-lg p-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 gap-1">
+                                    <button type="button" onclick="setStatus('${s.id}', 'present')" class="px-3 py-1 rounded-md text-xs font-medium transition ${stState.status === 'present' ? 'bg-emerald-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400'}">Present</button>
+                                    <button type="button" onclick="setStatus('${s.id}', 'absent')" class="px-3 py-1 rounded-md text-xs font-medium transition ${stState.status === 'absent' ? 'bg-rose-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400'}">Absent</button>
+                                    <button type="button" onclick="setStatus('${s.id}', 'late')" class="px-3 py-1 rounded-md text-xs font-medium transition ${stState.status === 'late' ? 'bg-amber-500 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400'}">Late</button>
+                                    <button type="button" onclick="openExcusedModal('${s.id}', '${safeName}')" class="px-3 py-1 rounded-md text-xs font-medium transition ${stState.status === 'excused' ? 'bg-sky-600 text-white shadow-xs' : 'text-zinc-600 dark:text-zinc-400'}">Excused</button>
+                                </div>
+                            </td>
+                            <td class="px-6 py-3.5 text-xs text-zinc-500">
+                                ${stState.reason ? `<span class="inline-flex items-center gap-1 text-sky-600"><i class="fa-solid fa-circle-info"></i> ${stState.reason}</span>` : '—'}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            updateAttendanceCounters();
+        }
+
+        function setStatus(studentId, status, reason = '') {
+            currentAttendanceState[studentId] = { status, reason };
+            renderAttendanceSheetUI();
+        }
+
+        function markAllStatus(status) {
+            Object.keys(currentAttendanceState).forEach(stId => {
+                currentAttendanceState[stId].status = status;
+                if (status !== 'excused') currentAttendanceState[stId].reason = '';
+            });
+            renderAttendanceSheetUI();
+        }
+
+        function updateAttendanceCounters() {
+            const list = Object.values(currentAttendanceState);
+            const total = list.length;
+            const present = list.filter(i => i.status === 'present').length;
+            const absent = list.filter(i => i.status === 'absent').length;
+            const late = list.filter(i => i.status === 'late').length;
+            const excused = list.filter(i => i.status === 'excused').length;
+            const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+
+            document.getElementById('cnt-total').innerText = total;
+            document.getElementById('cnt-present').innerText = present;
+            document.getElementById('cnt-absent').innerText = absent;
+            document.getElementById('cnt-late').innerText = late;
+            document.getElementById('cnt-excused').innerText = excused;
+            document.getElementById('cnt-rate').innerText = `${rate}%`;
+        }
+
+        async function saveCurrentAttendance() {
+            const sectionId = document.getElementById('att-section-select').value;
+            const subjectId = document.getElementById('att-subject-select').value;
+            const date = document.getElementById('att-date').value;
+
+            const records = Object.keys(currentAttendanceState).map(studentId => ({
+                date,
+                studentId,
+                subjectId,
+                sectionId,
+                status: currentAttendanceState[studentId].status,
+                excusedReason: currentAttendanceState[studentId].reason || '',
+                timestamp: Date.now(),
+                markedByTeacherId: currentUser ? currentUser.id : 't1'
+            }));
+
+            await AppDB.saveAttendance(records);
+            showToast(`Saved attendance sheet for ${records.length} students!`);
+        }
+
+        function openExcusedModal(studentId, name) {
+            activeExcusedStudentId = studentId;
+            document.getElementById('excused-student-name').innerText = name;
+            document.getElementById('custom-excused-note').value = currentAttendanceState[studentId]?.reason || '';
+            document.getElementById('modal-excused-reason').classList.remove('hidden');
+        }
+
+        function selectPresetExcused(reasonStr) {
+            document.getElementById('custom-excused-note').value = reasonStr;
+        }
+
+        function closeExcusedModal() {
+            document.getElementById('modal-excused-reason').classList.add('hidden');
+            activeExcusedStudentId = null;
+        }
+
+        function saveExcusedReason() {
+            const note = document.getElementById('custom-excused-note').value || 'Excused';
+            if (activeExcusedStudentId) setStatus(activeExcusedStudentId, 'excused', note);
+            closeExcusedModal();
+        }
+
+        /**
+         * ==========================================
+         * 7. ROSTER MANAGEMENT
+         * ==========================================
+         */
+        async function renderRosterTable() {
+            const search = document.getElementById('roster-search').value.toLowerCase();
+            const sectionId = document.getElementById('roster-section-filter').value;
+            const sections = await AppDB.getSections();
+            let students = await AppDB.getStudents(sectionId);
+
+            if (search) students = students.filter(s => s.name.toLowerCase().includes(search) || s.studentId.toLowerCase().includes(search));
+
+            const tbody = document.getElementById('roster-table-body');
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-xs text-zinc-400">No students found matching current filters.</td></tr>`;
+            } else {
+                tbody.innerHTML = students.map(s => {
+                    const isChecked = selectedRosterIds.has(s.id);
+                    const safeName = (s.name || '').replace(/'/g, "\\'");
+                    return `
+                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                            <td class="p-4"><input type="checkbox" onchange="toggleRosterSelect('${s.id}', this.checked)" ${isChecked ? 'checked' : ''} class="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-800"></td>
+                            <td class="px-6 py-3.5 font-mono text-xs font-semibold text-zinc-500">${s.studentId}</td>
+                            <td class="px-6 py-3.5 font-medium text-zinc-900 dark:text-zinc-100">${s.name}</td>
+                            <td class="px-6 py-3.5 text-xs text-zinc-500">${s.department}</td>
+                            <td class="px-6 py-3.5">
+                                <select onchange="inlineChangeSection('${s.id}', this.value)" class="text-xs px-2.5 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md font-medium text-zinc-800 dark:text-zinc-200">
+                                    ${sections.map(sec => `<option value="${sec.id}" ${sec.id === s.sectionId ? 'selected' : ''}>${sec.code}</option>`).join('')}
+                                </select>
+                            </td>
+                            <td class="px-6 py-3.5 text-right space-x-2">
+                                <button onclick="openEditStudentModal('${s.id}', '${s.studentId}', '${safeName}', '${s.department}', '${s.sectionId}')" class="p-1.5 text-zinc-400 hover:text-zinc-900 transition"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                <button onclick="confirmDeleteStudent('${s.id}', '${safeName}')" class="p-1.5 text-zinc-400 hover:text-rose-600 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            updateBulkActionBar();
+        }
+
+        function toggleRosterSelect(id, checked) {
+            if (checked) selectedRosterIds.add(id); else selectedRosterIds.delete(id);
+            updateBulkActionBar();
+        }
+
+        function toggleSelectAllRoster(masterCheckbox) {
+            document.querySelectorAll('#roster-table-body input[type="checkbox"]').forEach(cb => cb.checked = masterCheckbox.checked);
+            if (!masterCheckbox.checked) selectedRosterIds.clear();
+            updateBulkActionBar();
+        }
+
+        function updateBulkActionBar() {
+            const bar = document.getElementById('bulk-action-bar');
+            document.getElementById('bulk-count-badge').innerText = selectedRosterIds.size;
+            if (selectedRosterIds.size > 0) bar.classList.remove('hidden'); else bar.classList.add('hidden');
+        }
+
+        async function inlineChangeSection(studentId, newSectionId) {
+            await AppDB.updateStudentSection(studentId, newSectionId);
+            showToast('Student section updated inline!');
+        }
+
+        function openAddStudentModal() {
+            document.getElementById('student-modal-title').innerText = 'Add New Student';
+            document.getElementById('student-form-id').value = '';
+            document.getElementById('student-form-code').value = 'STU-' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('student-form-name').value = '';
+            document.getElementById('modal-student-form').classList.remove('hidden');
+        }
+
+        function openEditStudentModal(id, studentId, name, dept, sectionId) {
+            document.getElementById('student-modal-title').innerText = 'Edit Student Info';
+            document.getElementById('student-form-id').value = id;
+            document.getElementById('student-form-code').value = studentId;
+            document.getElementById('student-form-name').value = name;
+            document.getElementById('student-form-dept').value = dept;
+            document.getElementById('student-form-section').value = sectionId;
+            document.getElementById('modal-student-form').classList.remove('hidden');
+        }
+
+        function closeStudentModal() { document.getElementById('modal-student-form').classList.add('hidden'); }
+
+        async function handleSaveStudent(e) {
+            e.preventDefault();
+            const id = document.getElementById('student-form-id').value;
+            const studentId = document.getElementById('student-form-code').value;
+            const name = document.getElementById('student-form-name').value;
+            const department = document.getElementById('student-form-dept').value;
+            const sectionId = document.getElementById('student-form-section').value;
+
+            await AppDB.saveStudent({ id: id || undefined, studentId, name, department, sectionId });
+            closeStudentModal();
+            renderRosterTable();
+            showToast('Student saved to database!');
+        }
+
+        function confirmDeleteStudent(id, name) {
+            showConfirmModal("Delete Student", `Are you sure you want to permanently delete student "${name}"?`, async () => {
+                await AppDB.deleteStudent(id);
+                renderRosterTable();
+                showToast('Student deleted.');
+            });
+        }
+
+        function confirmBulkDelete() {
+            showConfirmModal("Delete Selected", `Delete ${selectedRosterIds.size} selected students?`, async () => {
+                await AppDB.bulkDeleteStudents(Array.from(selectedRosterIds));
+                selectedRosterIds.clear();
+                renderRosterTable();
+                showToast('Selected students removed.');
+            });
+        }
+
+        function openAddSectionModal() { document.getElementById('modal-section-form').classList.remove('hidden'); }
+        function closeSectionModal() { document.getElementById('modal-section-form').classList.add('hidden'); }
+        async function handleSaveSection(e) {
+            e.preventDefault();
+            const code = document.getElementById('section-form-code').value.trim();
+            const name = document.getElementById('section-form-name').value.trim();
+            await AppDB.saveSection({ code, name });
+            await populateDropdowns();
+            closeSectionModal();
+            showToast(`Section "${code}" created!`);
+        }
+
+        function openBulkMoveModal() { document.getElementById('modal-bulk-move').classList.remove('hidden'); }
+        function closeBulkMoveModal() { document.getElementById('modal-bulk-move').classList.add('hidden'); }
+        async function executeBulkMove() {
+            const targetSection = document.getElementById('bulk-target-section').value;
+            for (const studentId of selectedRosterIds) {
+                await AppDB.updateStudentSection(studentId, targetSection);
+            }
+            selectedRosterIds.clear();
+            closeBulkMoveModal();
+            renderRosterTable();
+            showToast('Transferred selected students.');
+        }
+
+        /**
+         * ==========================================
+         * 8. UI HELPERS & ANALYTICS FIXES
+         * ==========================================
+         */
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                html.classList.add('light');
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+            }
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 rounded-lg shadow-lg text-xs font-medium flex items-center space-x-2 transition transform translate-y-2 opacity-0';
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 200);
+            }, 3000);
+        }
+
+        function showConfirmModal(title, msg, callback) {
+            document.getElementById('confirm-modal-title').innerText = title;
+            document.getElementById('confirm-modal-msg').innerText = msg;
+            pendingConfirmCallback = callback;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        async function closeConfirmModal(confirmed) {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            if (confirmed && pendingConfirmCallback) {
+                await pendingConfirmCallback();
+            }
+            pendingConfirmCallback = null;
+        }
+
+        async function renderAnalyticsView() {
+            const totalStudents = await db.students.count();
+            const totalAttendance = await db.attendance_records.count();
+            const totalScores = await db.scores.count();
+            document.getElementById('ana-total-records').innerText = totalStudents + totalAttendance + totalScores;
+
+            const logs = await AppDB.getAttendanceLogs();
+            const totalLogs = logs.length;
+            const presentLogs = logs.filter(l => l.status === 'present' || l.status === 'late').length;
+            const avgRate = totalLogs > 0 ? Math.round((presentLogs / totalLogs) * 100) : 0;
+            document.getElementById('ana-avg-rate').innerText = `${avgRate}%`;
+
+            const excusedCount = logs.filter(l => l.status === 'excused').length;
+            document.getElementById('ana-excused-count').innerText = excusedCount;
+
+            renderHistoryLogs();
+        }
+
+        async function renderHistoryLogs() {
+            const subjectId = document.getElementById('hist-filter-subject').value;
+            const sectionId = document.getElementById('hist-filter-section').value;
+            const status = document.getElementById('hist-filter-status').value;
+            const date = document.getElementById('hist-filter-date').value;
+
+            let logs = await AppDB.getAttendanceLogs();
+            const students = await AppDB.getStudents();
+            const subjects = await AppDB.getSubjects();
+
+            if (subjectId !== 'ALL') logs = logs.filter(l => l.subjectId === subjectId);
+            if (sectionId !== 'ALL') logs = logs.filter(l => l.sectionId === sectionId);
+            if (status !== 'ALL') logs = logs.filter(l => l.status === status);
+            if (date) logs = logs.filter(l => l.date === date);
+
+            const tbody = document.getElementById('history-table-body');
+            if (logs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-6 text-center text-xs text-zinc-400">No attendance history logs match the filter criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = logs.map(l => {
+                const student = students.find(s => s.id === l.studentId) || { name: 'Unknown Student', studentId: '—' };
+                const subj = subjects.find(s => s.id === l.subjectId) || { code: '—' };
+                let badgeColor = 'bg-zinc-100 text-zinc-800';
+                if (l.status === 'present') badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300';
+                if (l.status === 'absent') badgeColor = 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300';
+                if (l.status === 'late') badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300';
+                if (l.status === 'excused') badgeColor = 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300';
+
+                return `
+                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition">
+                        <td class="px-6 py-3 font-mono text-xs text-zinc-500">${l.date}</td>
+                        <td class="px-6 py-3 font-medium text-zinc-900 dark:text-zinc-100">${student.name} <span class="text-xs text-zinc-400 font-mono">(${student.studentId})</span></td>
+                        <td class="px-6 py-3 text-xs text-zinc-600 dark:text-zinc-300">${subj.code}</td>
+                        <td class="px-6 py-3 text-xs text-zinc-500 font-mono">${l.sectionId}</td>
+                        <td class="px-6 py-3"><span class="px-2 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider ${badgeColor}">${l.status}</span></td>
+                        <td class="px-6 py-3 text-xs text-zinc-500">${l.excusedReason || '—'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function exportToCSV() {
+            const logs = await AppDB.getAttendanceLogs();
+            const students = await AppDB.getStudents();
+            const subjects = await AppDB.getSubjects();
+
+            let csvContent = "data:text/csv;charset=utf-8,Date,Student Name,Student ID,Subject,Section,Status,Notes\n";
+            logs.forEach(l => {
+                const student = students.find(s => s.id === l.studentId) || { name: 'Unknown', studentId: '—' };
+                const subj = subjects.find(s => s.id === l.subjectId) || { code: '—' };
+                csvContent += `"${l.date}","${student.name}","${student.studentId}","${subj.code}","${l.sectionId}","${l.status}","${l.excusedReason || ''}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `attendance_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Attendance logs exported to CSV successfully!');
         }
     </script>
 </body>
