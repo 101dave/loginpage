@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+body { 
+    font-family: 'Inter', sans-serif; 
+}
+
+/* Custom scrollbar for minimalist clean feel */
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #d4d4d8; 
+    border-radius: 9999px; 
+}
+.dark ::-webkit-scrollbar-thumb { 
+    background: #3f3f46; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: #a1a1aa; 
+}
